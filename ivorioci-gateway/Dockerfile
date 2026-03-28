@@ -24,5 +24,5 @@ COPY --from=builder /app/prisma ./prisma
 
 RUN npm prune --production
 
-EXPOSE 3000
+EXPOSE 2341
 CMD ["node", "dist/server.js"]
