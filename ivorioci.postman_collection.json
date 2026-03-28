@@ -1,0 +1,1116 @@
+{
+  "info": {
+    "name": "Ivorioci — API",
+    "description": "Collection complète pour l'API Ivorioci (gateway + stream service).\n\n## Démarrage rapide\n1. Définir la variable `baseUrl` (ex: `http://localhost:3000`)\n2. Appeler **Register** ou **Login** — `accessToken` et `refreshToken` se sauvegardent automatiquement\n3. Les routes catalogue sont publiques ; les routes streaming et gestion requièrent `{{accessToken}}`\n\n## Variables de collection\n| Variable | Description | Exemple |\n|---|---|---|\n| `baseUrl` | URL de la gateway | `http://localhost:3000` |\n| `accessToken` | Rempli automatiquement après login/register | |\n| `refreshToken` | Rempli automatiquement après login/register | |\n| `videoId` | UUID d'une vidéo (rempli après Create Video) | |\n| `categoryId` | UUID d'une catégorie (rempli après Create Category) | |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "videoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Vérifie que la gateway est opérationnelle. Aucune authentification requise."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"status\": \"ok\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Routes d'authentification. Rate limit : **10 requêtes / 15 minutes** par IP sur register, login et refresh.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.test('Tokens sauvegardés', () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"motdepasse123\",\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Dupont\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Crée un nouveau compte utilisateur et retourne un `accessToken` (15 min) et un `refreshToken` (7 jours).\n\nLe script de test sauvegarde automatiquement les tokens dans les variables de collection."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"motdepasse123\",\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Dupont\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "409 Email déjà utilisé",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"motdepasse123\",\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Dupont\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERROR\",\n    \"message\": \"Un compte avec cet email existe déjà\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 Validation échouée",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"pas-un-email\",\n  \"password\": \"court\",\n  \"firstName\": \"\",\n  \"lastName\": \"Dupont\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"email: Email invalide; password: Le mot de passe doit faire au moins 8 caractères; firstName: Prénom requis\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.test('Tokens sauvegardés', () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"motdepasse123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authentifie un utilisateur existant. Les tokens sont sauvegardés automatiquement dans les variables de collection via le script de test."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"motdepasse123\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Identifiants incorrects",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"jean.dupont@example.com\",\n  \"password\": \"mauvais\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERROR\",\n    \"message\": \"Email ou mot de passe incorrect\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', body.data.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', body.data.refreshToken);",
+                  "  pm.test('Nouveaux tokens sauvegardés', () => pm.expect(body.data.accessToken).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Émet une nouvelle paire de tokens à partir d'un `refreshToken` valide.\n\n**Rotation automatique** : l'ancien refresh token est immédiatement révoqué — il ne peut pas être réutilisé."
+          },
+          "response": [
+            {
+              "name": "200 OK — Nouveaux tokens",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}" },
+                "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Token révoqué ou expiré",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"token_expiré_ou_déjà_utilisé\"\n}" },
+                "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERROR\",\n    \"message\": \"Refresh token invalide ou expiré\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Révoque le refresh token fourni. L'access token reste valide jusqu'à expiration (15 min).\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}" },
+                "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Logout All Devices",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout-all"]
+            },
+            "description": "Révoque **tous** les refresh tokens de l'utilisateur connecté — déconnexion de tous les appareils.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["auth", "logout-all"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users — Profil",
+      "description": "Gestion du profil de l'utilisateur connecté. Toutes les routes requièrent un `accessToken` valide (`Authorization: Bearer {{accessToken}}`).",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Retourne le profil complet de l'utilisateur connecté (sans le hash du mot de passe)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"80dde7ee-5434-45d6-be57-8e58779a6eac\",\n    \"email\": \"jean.dupont@example.com\",\n    \"firstName\": \"Jean\",\n    \"lastName\": \"Dupont\",\n    \"createdAt\": \"2026-03-28T10:00:00.000Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:05:00.000Z\"\n}"
+            },
+            {
+              "name": "401 Token manquant ou expiré",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Token d'accès manquant\"\n  },\n  \"timestamp\": \"2026-03-28T10:05:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jean-Pierre\",\n  \"lastName\": \"Dupont\",\n  \"email\": \"jp.dupont@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Met à jour les champs du profil. Tous les champs sont optionnels.\n\nSi `email` est modifié, l'unicité est vérifiée — un `409` est retourné si l'email est déjà pris."
+          },
+          "response": [
+            {
+              "name": "200 OK — Profil mis à jour",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Jean-Pierre\"\n}" },
+                "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"80dde7ee-5434-45d6-be57-8e58779a6eac\",\n    \"email\": \"jp.dupont@example.com\",\n    \"firstName\": \"Jean-Pierre\",\n    \"lastName\": \"Dupont\",\n    \"createdAt\": \"2026-03-28T10:00:00.000Z\",\n    \"updatedAt\": \"2026-03-28T10:10:00.000Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:10:00.000Z\"\n}"
+            },
+            {
+              "name": "409 Email déjà utilisé",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"email\": \"autre.compte@example.com\"\n}" },
+                "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"ERROR\",\n    \"message\": \"Cet email est déjà utilisé\"\n  },\n  \"timestamp\": \"2026-03-28T10:10:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Supprime définitivement le compte de l'utilisateur connecté et révoque tous ses refresh tokens.\n\n**Action irréversible** — confirmer avant d'appeler."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stream — Catégories",
+      "description": "Catalogue des catégories de vidéos, proxifié via `{{baseUrl}}/api/categories`.\n\n**Public** : lecture libre sans token.\n**Protégé** : création, modification et suppression requièrent `{{accessToken}}`.\n\nLe script *Create Category* sauvegarde automatiquement `{{categoryId}}`.",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Retourne toutes les catégories triées par nom."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"name\": \"Documentaires\",\n      \"slug\": \"documentaires\",\n      \"description\": \"Films documentaires\",\n      \"createdAt\": \"2026-03-28T10:00:00Z\",\n      \"updatedAt\": \"2026-03-28T10:00:00Z\"\n    }\n  ],\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Category",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "{{categoryId}}"]
+            },
+            "description": "Retourne une catégorie par son UUID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"name\": \"Documentaires\",\n    \"slug\": \"documentaires\",\n    \"description\": \"Films documentaires\",\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/categories/inexistant", "host": ["{{baseUrl}}"], "path": ["api", "categories", "inexistant"] }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"NOT_FOUND\",\n    \"message\": \"Resource not found\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('categoryId', body.data.id);",
+                  "  pm.test('categoryId sauvegardé', () => pm.expect(body.data.id).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Documentaires\",\n  \"slug\": \"documentaires\",\n  \"description\": \"Films documentaires du monde entier\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Crée une nouvelle catégorie. Le `slug` doit être unique.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`\n\nLe script de test sauvegarde `{{categoryId}}` automatiquement."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Documentaires\",\n  \"slug\": \"documentaires\",\n  \"description\": \"Films documentaires du monde entier\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"name\": \"Documentaires\",\n    \"slug\": \"documentaires\",\n    \"description\": \"Films documentaires du monde entier\",\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "409 Slug déjà utilisé",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Documentaires\",\n  \"slug\": \"documentaires\",\n  \"description\": \"\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/categories", "host": ["{{baseUrl}}"], "path": ["api", "categories"] }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"CONFLICT\",\n    \"message\": \"Resource already exists\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Documentaires & Reportages\",\n  \"description\": \"Documentaires et grands reportages\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "{{categoryId}}"]
+            },
+            "description": "Met à jour une catégorie. Tous les champs sont optionnels.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Documentaires & Reportages\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"name\": \"Documentaires & Reportages\",\n    \"slug\": \"documentaires\",\n    \"description\": \"Documentaires et grands reportages\",\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:15:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:15:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "{{categoryId}}"]
+            },
+            "description": "Supprime une catégorie. Les vidéos liées restent intactes (`category_id` mis à NULL).\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stream — Vidéos",
+      "description": "Catalogue et gestion des vidéos, proxifié via `{{baseUrl}}/api/videos`.\n\n**Public** : `GET /api/videos` et `GET /api/videos/:id`.\n**Protégé** : création, modification, suppression requièrent `{{accessToken}}`.\n\nLe script *Create Video* sauvegarde automatiquement `{{videoId}}`.",
+      "item": [
+        {
+          "name": "List Videos",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/videos?page=1&limit=20&search=&categoryId=&sortBy=created_at&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Numéro de page (défaut: 1)" },
+                { "key": "limit", "value": "20", "description": "Résultats par page, max 100 (défaut: 20)" },
+                { "key": "search", "value": "", "description": "Recherche plein-texte sur titre et description" },
+                { "key": "categoryId", "value": "", "description": "Filtrer par UUID de catégorie" },
+                { "key": "sortBy", "value": "created_at", "description": "Tri : created_at | views_count | title" },
+                { "key": "sortOrder", "value": "desc", "description": "Ordre : asc | desc" }
+              ]
+            },
+            "description": "Liste paginée des vidéos publiées avec filtrage et tri.\n\nRetourne un objet `PaginatedData` : `{ items, total, page, limit, totalPages }`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/videos?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "videos"],
+                  "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n        \"title\": \"Les Océans du Monde\",\n        \"description\": \"Un voyage au fond des mers\",\n        \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n        \"categoryId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n        \"category\": { \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"name\": \"Documentaires\", \"slug\": \"documentaires\" },\n        \"duration\": 5400,\n        \"viewsCount\": 1234,\n        \"fileSize\": 2147483648,\n        \"mimeType\": \"video/mp4\",\n        \"isPublished\": true,\n        \"createdAt\": \"2026-03-28T10:00:00Z\",\n        \"updatedAt\": \"2026-03-28T10:00:00Z\"\n      }\n    ],\n    \"total\": 42,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 3\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Videos by Category",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/categories/{{categoryId}}/videos?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "categories", "{{categoryId}}", "videos"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "sortBy", "value": "created_at", "disabled": true },
+                { "key": "sortOrder", "value": "desc", "disabled": true }
+              ]
+            },
+            "description": "Retourne les vidéos publiées d'une catégorie donnée (paginées).\n\nRetourne 404 si la catégorie n'existe pas."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/categories/{{categoryId}}/videos", "host": ["{{baseUrl}}"], "path": ["api", "categories", "{{categoryId}}", "videos"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [],\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 0\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Video",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/videos/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos", "{{videoId}}"]
+            },
+            "description": "Retourne les métadonnées d'une vidéo par son UUID. Le `filePath` n'est jamais exposé."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/videos/{{videoId}}", "host": ["{{baseUrl}}"], "path": ["api", "videos", "{{videoId}}"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n    \"title\": \"Les Océans du Monde\",\n    \"description\": \"Un voyage au fond des mers\",\n    \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n    \"categoryId\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n    \"category\": { \"id\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"name\": \"Documentaires\", \"slug\": \"documentaires\" },\n    \"duration\": 5400,\n    \"viewsCount\": 1235,\n    \"fileSize\": 2147483648,\n    \"mimeType\": \"video/mp4\",\n    \"isPublished\": true,\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/videos/inexistant", "host": ["{{baseUrl}}"], "path": ["api", "videos", "inexistant"] }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"NOT_FOUND\",\n    \"message\": \"Resource not found\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Video",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('videoId', body.data.id);",
+                  "  pm.test('videoId sauvegardé', () => pm.expect(body.data.id).to.be.a('string'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Les Océans du Monde\",\n  \"description\": \"Un voyage au fond des mers\",\n  \"filePath\": \"documentaires/oceans.mp4\",\n  \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"duration\": 5400,\n  \"fileSize\": 2147483648,\n  \"mimeType\": \"video/mp4\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/videos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Crée une entrée vidéo. Le `filePath` est relatif au `VIDEO_STORAGE_PATH` du service.\n\nLa vidéo est créée avec `isPublished: false` par défaut — utiliser *Update Video* pour la publier.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`\n\nLe script de test sauvegarde `{{videoId}}` automatiquement."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Les Océans du Monde\",\n  \"description\": \"Un voyage au fond des mers\",\n  \"filePath\": \"documentaires/oceans.mp4\",\n  \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n  \"categoryId\": null,\n  \"duration\": 5400,\n  \"fileSize\": 2147483648,\n  \"mimeType\": \"video/mp4\"\n}"
+                },
+                "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n    \"title\": \"Les Océans du Monde\",\n    \"description\": \"Un voyage au fond des mers\",\n    \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n    \"categoryId\": null,\n    \"duration\": 5400,\n    \"viewsCount\": 0,\n    \"fileSize\": 2147483648,\n    \"mimeType\": \"video/mp4\",\n    \"isPublished\": false,\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Champs requis manquants",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"description\": \"Pas de titre\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"title and filePath are required\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Video",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Les Océans du Monde — Version longue\",\n  \"isPublished\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/videos/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos", "{{videoId}}"]
+            },
+            "description": "Met à jour les métadonnées d'une vidéo. Tous les champs sont optionnels.\n\nMettre `isPublished: true` pour rendre la vidéo visible dans le catalogue.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+                ],
+                "body": { "mode": "raw", "raw": "{\n  \"isPublished\": true\n}" },
+                "url": { "raw": "{{baseUrl}}/api/videos/{{videoId}}", "host": ["{{baseUrl}}"], "path": ["api", "videos", "{{videoId}}"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n    \"title\": \"Les Océans du Monde — Version longue\",\n    \"description\": \"Un voyage au fond des mers\",\n    \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n    \"categoryId\": null,\n    \"duration\": 5400,\n    \"viewsCount\": 0,\n    \"fileSize\": 2147483648,\n    \"mimeType\": \"video/mp4\",\n    \"isPublished\": true,\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:20:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:20:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Video",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/videos/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos", "{{videoId}}"]
+            },
+            "description": "Supprime définitivement la fiche vidéo (le fichier sur disque n'est pas supprimé).\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/api/videos/{{videoId}}", "host": ["{{baseUrl}}"], "path": ["api", "videos", "{{videoId}}"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stream — Lecture",
+      "description": "Lecture en streaming des fichiers vidéo, proxifié via `{{baseUrl}}/api/stream`.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}` (validé par la gateway, puis par le service).\n\nLe service utilise les **HTTP Range Requests** (RFC 7233) : les lecteurs vidéo natifs (navigateur, VLC, FFmpeg…) envoient automatiquement le header `Range: bytes=0-` pour les lectures progressives et le seeking.",
+      "item": [
+        {
+          "name": "Stream Video",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Range",
+                "value": "bytes=0-",
+                "description": "Optionnel — les lecteurs vidéo l'envoient automatiquement. Déclenche une réponse 206 Partial Content.",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stream/{{videoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stream", "{{videoId}}"]
+            },
+            "description": "Streame le fichier vidéo associé à l'UUID donné.\n\n- Sans header `Range` → **200 OK** + corps complet\n- Avec `Range: bytes=X-Y` → **206 Partial Content** + segment demandé\n\nLe compteur `viewsCount` est incrémenté de façon asynchrone à chaque lecture.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`"
+          },
+          "response": [
+            {
+              "name": "206 Partial Content (range request)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+                  { "key": "Range", "value": "bytes=0-1048575" }
+                ],
+                "url": { "raw": "{{baseUrl}}/api/stream/{{videoId}}", "host": ["{{baseUrl}}"], "path": ["api", "stream", "{{videoId}}"] }
+              },
+              "status": "Partial Content",
+              "code": 206,
+              "_postman_previewlanguage": "text",
+              "header": [
+                { "key": "Content-Type", "value": "video/mp4" },
+                { "key": "Accept-Ranges", "value": "bytes" },
+                { "key": "Content-Range", "value": "bytes 0-1048575/2147483648" },
+                { "key": "Content-Length", "value": "1048576" }
+              ],
+              "body": "(binary — données vidéo)"
+            },
+            {
+              "name": "401 Token manquant",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/stream/{{videoId}}", "host": ["{{baseUrl}}"], "path": ["api", "stream", "{{videoId}}"] }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"UNAUTHORIZED\",\n    \"message\": \"Authentication required\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "404 Vidéo non publiée ou introuvable",
+              "originalRequest": {
+                "method": "GET",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "url": { "raw": "{{baseUrl}}/api/stream/inexistant", "host": ["{{baseUrl}}"], "path": ["api", "stream", "inexistant"] }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"NOT_FOUND\",\n    \"message\": \"Video not found\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Erreurs — Référence",
+      "description": "Collection des codes d'erreur retournés par la gateway et le stream service.\n\n| Code | HTTP | Description |\n|---|---|---|\n| `VALIDATION_ERROR` | 400 | Corps de requête invalide |\n| `UNAUTHORIZED` | 401 | Token absent |\n| `TOKEN_EXPIRED` | 401 | Access token expiré |\n| `TOKEN_INVALID` | 401 | Token malformé ou signature incorrecte |\n| `FORBIDDEN` | 403 | Accès refusé |\n| `NOT_FOUND` | 404 | Ressource ou route inconnue |\n| `CONFLICT` | 409 | Ressource déjà existante (slug, email…) |\n| `ERROR` | 4xx | Erreur métier (message explicite) |\n| `RATE_LIMIT` | 429 | Limite globale dépassée (200 req/15min) |\n| `AUTH_RATE_LIMIT` | 429 | Limite auth dépassée (10 req/15min) |\n| `BAD_GATEWAY` | 502 | Microservice cible indisponible |\n| `INTERNAL_ERROR` | 500 | Erreur interne non gérée |",
+      "item": [
+        {
+          "name": "404 Route inconnue",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/route/inexistante",
+              "host": ["{{baseUrl}}"],
+              "path": ["route", "inexistante"]
+            },
+            "description": "Toute route non définie dans la gateway retourne un 404 structuré."
+          },
+          "response": [
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/route/inexistante", "host": ["{{baseUrl}}"], "path": ["route", "inexistante"] }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"NOT_FOUND\",\n    \"message\": \"Route introuvable\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "502 Service indisponible",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/videos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "videos"]
+            },
+            "description": "Retourné par la gateway lorsque le stream service (port 8080) est arrêté."
+          },
+          "response": [
+            {
+              "name": "502 Bad Gateway",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
+              },
+              "status": "Bad Gateway",
+              "code": 502,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"BAD_GATEWAY\",\n    \"message\": \"Le microservice est indisponible\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
