@@ -853,31 +853,71 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Les Océans du Monde\",\n  \"description\": \"Un voyage au fond des mers\",\n  \"filePath\": \"documentaires/oceans.mp4\",\n  \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n  \"categoryId\": \"{{categoryId}}\",\n  \"duration\": 5400,\n  \"fileSize\": 2147483648,\n  \"mimeType\": \"video/mp4\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Les Océans du Monde",
+                  "type": "text",
+                  "description": "Titre de la vidéo (obligatoire)"
+                },
+                {
+                  "key": "description",
+                  "value": "Un voyage au fond des mers",
+                  "type": "text",
+                  "description": "Description (optionnel)"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "{{categoryId}}",
+                  "type": "text",
+                  "description": "UUID de la catégorie (optionnel)"
+                },
+                {
+                  "key": "duration",
+                  "value": "5400",
+                  "type": "text",
+                  "description": "Durée en secondes (optionnel, défaut 0)"
+                },
+                {
+                  "key": "video",
+                  "type": "file",
+                  "src": [],
+                  "description": "Fichier vidéo — formats acceptés : video/mp4, video/webm, video/ogg, video/quicktime (max 2 Go)"
+                },
+                {
+                  "key": "thumbnail",
+                  "type": "file",
+                  "src": [],
+                  "description": "Miniature — formats acceptés : image/jpeg, image/png, image/webp (max 10 Mo)"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/videos",
               "host": ["{{baseUrl}}"],
               "path": ["api", "videos"]
             },
-            "description": "Crée une entrée vidéo. Le `filePath` est relatif au `VIDEO_STORAGE_PATH` du service.\n\nLa vidéo est créée avec `isPublished: false` par défaut — utiliser *Update Video* pour la publier.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`\n\nLe script de test sauvegarde `{{videoId}}` automatiquement."
+            "description": "Crée une vidéo en envoyant les fichiers en `multipart/form-data`.\n\n**Ne pas définir le header `Content-Type`** — Postman le génère automatiquement avec le boundary correct.\n\nLe service :\n1. Détecte le vrai type MIME depuis les octets du fichier (pas le nom)\n2. Sauvegarde la vidéo dans `VIDEO_STORAGE_PATH/<uuid>.<ext>`\n3. Sauvegarde la miniature dans `THUMBNAIL_STORAGE_PATH/<uuid>.<ext>`\n4. Construit `thumbnailUrl` = `PUBLIC_BASE_URL/thumbnails/<uuid>.<ext>`\n\nLa vidéo est créée avec `isPublished: false` — utiliser *Update Video* pour la publier.\n\n**Requiert** : `Authorization: Bearer {{accessToken}}`\n\nLe script de test sauvegarde `{{videoId}}` automatiquement."
           },
           "response": [
             {
               "name": "201 Created",
               "originalRequest": {
                 "method": "POST",
-                "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-                ],
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
                 "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"title\": \"Les Océans du Monde\",\n  \"description\": \"Un voyage au fond des mers\",\n  \"filePath\": \"documentaires/oceans.mp4\",\n  \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n  \"categoryId\": null,\n  \"duration\": 5400,\n  \"fileSize\": 2147483648,\n  \"mimeType\": \"video/mp4\"\n}"
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "Les Océans du Monde", "type": "text" },
+                    { "key": "description", "value": "Un voyage au fond des mers", "type": "text" },
+                    { "key": "categoryId", "value": "", "type": "text" },
+                    { "key": "duration", "value": "5400", "type": "text" },
+                    { "key": "video", "type": "file", "src": "/chemin/vers/oceans.mp4" },
+                    { "key": "thumbnail", "type": "file", "src": "/chemin/vers/thumb.jpg" }
+                  ]
                 },
                 "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
               },
@@ -885,24 +925,47 @@
               "code": 201,
               "_postman_previewlanguage": "json",
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n    \"title\": \"Les Océans du Monde\",\n    \"description\": \"Un voyage au fond des mers\",\n    \"thumbnailUrl\": \"https://cdn.example.com/thumb1.jpg\",\n    \"categoryId\": null,\n    \"duration\": 5400,\n    \"viewsCount\": 0,\n    \"fileSize\": 2147483648,\n    \"mimeType\": \"video/mp4\",\n    \"isPublished\": false,\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"b1c2d3e4-f5a6-7890-bcde-f12345678901\",\n    \"title\": \"Les Océans du Monde\",\n    \"description\": \"Un voyage au fond des mers\",\n    \"thumbnailUrl\": \"http://localhost:3000/api/thumbnails/a3f1e2d4-b5c6-7890-abcd-ef1234567890.jpg\",\n    \"categoryId\": null,\n    \"duration\": 5400,\n    \"viewsCount\": 0,\n    \"fileSize\": 104857600,\n    \"mimeType\": \"video/mp4\",\n    \"isPublished\": false,\n    \"createdAt\": \"2026-03-28T10:00:00Z\",\n    \"updatedAt\": \"2026-03-28T10:00:00Z\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
             },
             {
-              "name": "400 Champs requis manquants",
+              "name": "400 Fichier video manquant",
               "originalRequest": {
                 "method": "POST",
-                "header": [
-                  { "key": "Content-Type", "value": "application/json" },
-                  { "key": "Authorization", "value": "Bearer {{accessToken}}" }
-                ],
-                "body": { "mode": "raw", "raw": "{\n  \"description\": \"Pas de titre\"\n}" },
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "Test", "type": "text" }
+                  ]
+                },
                 "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
               },
               "status": "Bad Request",
               "code": 400,
               "_postman_previewlanguage": "json",
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"title and filePath are required\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"video file is required\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
+            },
+            {
+              "name": "400 Format vidéo non supporté",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    { "key": "title", "value": "Test", "type": "text" },
+                    { "key": "video", "type": "file", "src": "/chemin/vers/fichier.avi" },
+                    { "key": "thumbnail", "type": "file", "src": "/chemin/vers/thumb.jpg" }
+                  ]
+                },
+                "url": { "raw": "{{baseUrl}}/api/videos", "host": ["{{baseUrl}}"], "path": ["api", "videos"] }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"unsupported video format: application/octet-stream\"\n  },\n  \"timestamp\": \"2026-03-28T10:00:00Z\"\n}"
             }
           ]
         },
@@ -968,6 +1031,66 @@
               "_postman_previewlanguage": "text",
               "header": [],
               "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Get Thumbnail",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/thumbnails/:filename",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "thumbnails", ":filename"],
+              "variable": [
+                {
+                  "key": "filename",
+                  "value": "a3f1e2d4-b5c6-7890-abcd-ef1234567890.jpg",
+                  "description": "Nom du fichier renvoyé dans thumbnailUrl lors du Create Video"
+                }
+              ]
+            },
+            "description": "Sert la miniature directement depuis le disque du stream service.\n\nL'URL complète est retournée dans le champ `thumbnailUrl` de la réponse *Create Video* et *Get Video* — il suffit de la coller ici.\n\n**Pas d'authentification requise** — les miniatures sont publiques."
+          },
+          "response": [
+            {
+              "name": "200 OK — image/jpeg",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/thumbnails/a3f1e2d4-b5c6-7890-abcd-ef1234567890.jpg",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "thumbnails", "a3f1e2d4-b5c6-7890-abcd-ef1234567890.jpg"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                { "key": "Content-Type", "value": "image/jpeg" },
+                { "key": "Cache-Control", "value": "public, max-age=31536000" }
+              ],
+              "body": "(binary — données image)"
+            },
+            {
+              "name": "404 Fichier introuvable",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/thumbnails/inexistant.jpg",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "thumbnails", "inexistant.jpg"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [],
+              "body": "404 page not found"
             }
           ]
         }

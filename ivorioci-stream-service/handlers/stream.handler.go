@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/gorilla/mux"
 	"ivorioci-stream-service/models"
 	"ivorioci-stream-service/services"
+
+	"github.com/gorilla/mux"
 )
 
 type StreamHandler struct {
@@ -21,11 +22,6 @@ func NewStreamHandler(vs *services.VideoService, storagePath string) *StreamHand
 	return &StreamHandler{videoService: vs, storagePath: storagePath}
 }
 
-// GET /stream/{id}
-//
-// Streams the video file using HTTP range requests (RFC 7233).
-// http.ServeContent handles Accept-Ranges, Content-Range, and 206 Partial Content
-// transparently, which is the correct approach for video players.
 func (h *StreamHandler) StreamVideo(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
@@ -63,7 +59,5 @@ func (h *StreamHandler) StreamVideo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", video.MimeType)
 	w.Header().Set("Cache-Control", "no-cache")
-	// http.ServeContent sets Accept-Ranges, Content-Range and returns 206
-	// when the client sends a Range header.
 	http.ServeContent(w, r, video.Title, stat.ModTime(), file)
 }

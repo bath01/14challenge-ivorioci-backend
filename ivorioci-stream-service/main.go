@@ -24,26 +24,33 @@ func main() {
 	}
 	defer db.Close()
 
-	// Ensure video storage directory exists
-	if err := os.MkdirAll(cfg.VideoStoragePath, 0o750); err != nil {
-		log.Fatalf("[FATAL] Cannot create video storage path %q: %v", cfg.VideoStoragePath, err)
+	// Ensure storage directories exist
+	for _, dir := range []string{cfg.VideoStoragePath, cfg.ThumbnailStoragePath} {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
+			log.Fatalf("[FATAL] Cannot create storage directory %q: %v", dir, err)
+		}
 	}
 
 	// Wire dependencies
 	videoSvc := services.NewVideoService(db)
 	categorySvc := services.NewCategoryService(db)
 
-	videoH := handlers.NewVideoHandler(videoSvc, categorySvc)
+	videoH := handlers.NewVideoHandler(
+		videoSvc, categorySvc,
+		cfg.VideoStoragePath,
+		cfg.ThumbnailStoragePath,
+		cfg.PublicBaseURL,
+	)
 	categoryH := handlers.NewCategoryHandler(categorySvc)
 	streamH := handlers.NewStreamHandler(videoSvc, cfg.VideoStoragePath)
 
-	router := routes.New(videoH, categoryH, streamH, cfg.JWTAccessSecret)
+	router := routes.New(videoH, categoryH, streamH, cfg.ThumbnailStoragePath, cfg.JWTAccessSecret)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 0, // disabled for streaming responses
+		ReadTimeout:  0,             // disabled — large file uploads need unrestricted read time
+		WriteTimeout: 0,             // disabled — streaming responses need unrestricted write time
 		IdleTimeout:  60 * time.Second,
 	}
 

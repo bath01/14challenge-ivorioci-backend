@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS videos (
     views_count   INTEGER      NOT NULL DEFAULT 0,
     file_size     BIGINT       NOT NULL DEFAULT 0,  -- bytes
     mime_type     VARCHAR(100) NOT NULL DEFAULT 'video/mp4',
-    is_published  BOOLEAN      NOT NULL DEFAULT false,
+    is_published  BOOLEAN      NOT NULL DEFAULT true,
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );

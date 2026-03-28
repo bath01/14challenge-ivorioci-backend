@@ -18,7 +18,6 @@ func NewCategoryHandler(cs *services.CategoryService) *CategoryHandler {
 	return &CategoryHandler{categoryService: cs}
 }
 
-// GET /categories
 func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.categoryService.GetCategories(r.Context())
 	if err != nil {
@@ -28,7 +27,6 @@ func (h *CategoryHandler) ListCategories(w http.ResponseWriter, r *http.Request)
 	writeSuccess(w, http.StatusOK, categories)
 }
 
-// GET /categories/{id}
 func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	category, err := h.categoryService.GetCategoryByID(r.Context(), id)
@@ -39,7 +37,6 @@ func (h *CategoryHandler) GetCategory(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, http.StatusOK, category)
 }
 
-// POST /categories
 func (h *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	var dto models.CreateCategoryDTO
 	if err := json.NewDecoder(r.Body).Decode(&dto); err != nil {
@@ -59,7 +56,6 @@ func (h *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request)
 	writeSuccess(w, http.StatusCreated, category)
 }
 
-// PUT /categories/{id}
 func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	var dto models.UpdateCategoryDTO
@@ -76,7 +72,6 @@ func (h *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request)
 	writeSuccess(w, http.StatusOK, category)
 }
 
-// DELETE /categories/{id}
 func (h *CategoryHandler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	if err := h.categoryService.DeleteCategory(r.Context(), id); err != nil {

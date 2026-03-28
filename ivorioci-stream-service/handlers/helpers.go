@@ -23,7 +23,6 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, models.NewError(code, message))
 }
 
-// writeAppError maps an AppError (or any sentinel) to the correct HTTP status.
 func writeAppError(w http.ResponseWriter, err error) {
 	var appErr *models.AppError
 	if errors.As(err, &appErr) {
@@ -33,7 +32,6 @@ func writeAppError(w http.ResponseWriter, err error) {
 	writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Internal server error")
 }
 
-// queryInt reads an integer query param with a fallback default.
 func queryInt(r *http.Request, key string, def int) int {
 	val := r.URL.Query().Get(key)
 	if val == "" {

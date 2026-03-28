@@ -30,4 +30,12 @@ export const proxyRoutes: ProxyRouteConfig[] = [
     requireAuth: true,
     changeOrigin: true,
   },
+
+  {
+    path: '/api/thumbnails',
+    target: process.env.STREAM_SERVICE_URL ?? 'http://localhost:8080',
+    pathRewrite: { '^/api': '' },
+    requireAuth: false,
+    changeOrigin: true,
+  },
 ];

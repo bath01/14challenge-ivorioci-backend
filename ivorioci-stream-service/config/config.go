@@ -11,11 +11,13 @@ import (
 )
 
 type Config struct {
-	Port             string
-	GoEnv            string
-	DatabaseURL      string
-	JWTAccessSecret  string
-	VideoStoragePath string
+	Port                 string
+	GoEnv                string
+	DatabaseURL          string
+	JWTAccessSecret      string
+	VideoStoragePath     string
+	ThumbnailStoragePath string
+	PublicBaseURL        string // e.g. http://localhost:3000/api — used to build thumbnail URLs
 }
 
 func Load() *Config {
@@ -26,11 +28,13 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:             getEnv("PORT", "8080"),
-		GoEnv:            getEnv("GO_ENV", "development"),
-		DatabaseURL:      mustGetEnv("DATABASE_URL"),
-		JWTAccessSecret:  mustGetEnv("JWT_ACCESS_SECRET"),
-		VideoStoragePath: getEnv("VIDEO_STORAGE_PATH", "./storage/videos"),
+		Port:                 getEnv("PORT", "8080"),
+		GoEnv:                getEnv("GO_ENV", "development"),
+		DatabaseURL:          mustGetEnv("DATABASE_URL"),
+		JWTAccessSecret:      mustGetEnv("JWT_ACCESS_SECRET"),
+		VideoStoragePath:     getEnv("VIDEO_STORAGE_PATH", "./storage/videos"),
+		ThumbnailStoragePath: getEnv("THUMBNAIL_STORAGE_PATH", "./storage/thumbnails"),
+		PublicBaseURL:        getEnv("PUBLIC_BASE_URL", "http://localhost:3000/api"),
 	}
 }
 
